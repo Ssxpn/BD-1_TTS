@@ -3,11 +3,11 @@ import os
 import wave
 import simpleaudio as sa
 
-# 📁 Dossier principal des sons
+# Dossier principal des sons
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SOUND_PATH = os.path.join(BASE_DIR, "sounds", "compressed")
 
-# 🎵 Dossiers pour chaque type de son
+# Dossiers pour chaque type de son
 SOUND_DIRECTORIES = {
     "affirmation": os.path.join(SOUND_PATH, "01_Happy_Thrilled"),
     "negation": os.path.join(SOUND_PATH, "04_Sadness_Deception"),
@@ -16,7 +16,7 @@ SOUND_DIRECTORIES = {
     "neutral": os.path.join(SOUND_PATH, "10_Neutral"),
 }
 
-# 🔄 Charger tous les fichiers WAV une seule fois au démarrage
+# Charger tous les fichiers WAV une seule fois au démarrage
 SOUND_FILES = {category: [] for category in SOUND_DIRECTORIES}
 
 for category, folder in SOUND_DIRECTORIES.items():
@@ -38,14 +38,14 @@ def load_wav_file(sound_file):
             wav_file.getframerate()
         )
 
-# 🔴 Liste pour stocker les objets `play_obj` et éviter qu'ils ne soient supprimés trop tôt
+# Liste pour stocker les objets `play_obj` et éviter qu'ils ne soient supprimés trop tôt
 active_sounds = []
 
 def play_bd1_sound(audio_data, num_channels, bytes_per_sample, sample_rate):
     """Joue un fichier WAV préchargé sans latence et empêche la suppression prématurée."""
     play_obj = sa.play_buffer(audio_data, num_channels, bytes_per_sample, sample_rate)
     active_sounds.append(play_obj)  # Stocke l'objet pour empêcher sa suppression immédiate
-    print("✅ Lecture en cours...")
+    print(" Lecture en cours...")
 
 def get_sound_category(text):
     """Détecte la catégorie du son en fonction du texte reçu."""
@@ -64,7 +64,7 @@ def get_sound_category(text):
 
     return "neutral"
 
-# 🔥 Test avec une phrase
+# Test avec une phrase
 user_input = "Oui, c'est parfait !"
 category = get_sound_category(user_input)
 sound_file = get_random_sound(category)
@@ -73,7 +73,7 @@ if sound_file:
     sound_data = load_wav_file(sound_file)
     play_bd1_sound(*sound_data)
 else:
-    print("❌ Aucun son disponible pour cette catégorie.")
+    print(" Aucun son disponible pour cette catégorie.")
 
-# 🔴 Attente passive pour éviter que le programme ne se ferme trop vite
+# Attente passive pour éviter que le programme ne se ferme trop vite
 input("Appuyez sur Entrée pour quitter après lecture du son...")
