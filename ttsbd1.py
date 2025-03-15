@@ -62,8 +62,8 @@ def get_sound_category(text):
     #Détecte la catégorie du son en fonction du texte reçu.
     SOUND_MAP = {
         "oui": "affirmation",
-        "non": "negation",
         "?": "question",
+        "non": "negation",
         "merci": "affirmation",
         "quoi": "question",
         "super": "affirmation",
@@ -76,7 +76,7 @@ def get_sound_category(text):
     return "neutral"
 
 # Test avec une phrase
-user_input = "Oui, c'est parfait !"
+user_input = "Oui, c'est parfait"
 category = get_sound_category(user_input)
 sound_file = get_random_sound(category)  # Retourne un son neutre si aucun son dispo
 
