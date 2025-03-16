@@ -10,23 +10,13 @@ AudioSegment.ffprobe = "C:/ffmpeg/bin/ffprobe.exe"
 if not os.path.isfile(AudioSegment.converter):
     raise FileNotFoundError("❌ FFmpeg introuvable ! Assure-toi que `ffmpeg.exe` est installé dans `C:/ffmpeg/bin/`")
 
-# 🔹 Forcer pydub à utiliser ffmpeg
-AudioSegment.converter = "C:/ffmpeg/bin/ffmpeg.exe"  # Mets le bon chemin vers ffmpeg.exe
-
-# 🔹 Optionnel : Spécifier ffprobe si nécessaire
-AudioSegment.ffprobe = "C:/ffmpeg/bin/ffprobe.exe"
-
-# 🔹 Vérification que ffmpeg est bien trouvé
-if not os.path.isfile(AudioSegment.converter):
-    raise FileNotFoundError("FFmpeg introuvable. Vérifie que ffmpeg.exe est bien installé dans C:/ffmpeg/bin/")
-
 # Forcer l'utilisation de ffmpeg
 AudioSegment.converter = "C:/ffmpeg/bin/ffmpeg.exe"
 
 # 📂 Définition des chemins des dossiers
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-COMPRESSED_DIR = os.path.join(BASE_DIR, "sounds", "compressed")
-WITHOUT_DUPLICATE_DIR = os.path.join(BASE_DIR, "sounds", "Withoutduplicate")
+COMPRESSED_DIR = os.path.join(BASE_DIR, "sounds", "Sifflement")
+WITHOUT_DUPLICATE_DIR = os.path.join(BASE_DIR, "sounds", "Sifflementb")
 
 # 🗑️ Supprimer le dossier Withoutduplicate s'il existe
 if os.path.exists(WITHOUT_DUPLICATE_DIR):
