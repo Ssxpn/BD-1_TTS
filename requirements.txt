@@ -1,0 +1,4 @@
+simpleaudio
+pydub
+ffmpeg-python
+numpy
