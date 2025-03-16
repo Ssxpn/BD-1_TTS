@@ -2,6 +2,7 @@ import os
 import io
 import wave
 import random
+import re
 import simpleaudio as sa
 from pydub import AudioSegment
 from typing import Any
@@ -33,6 +34,35 @@ def get_random_variant(folder, consonne):
     if variants:
         return os.path.join(folder, random.choice(variants))
     return None
+
+def process_message_by_phrases(message):
+    """Divise le message en phrases et assigne une émotion distincte à chaque partie."""
+    
+    # 🔹 Séparer les phrases tout en gardant les séparateurs
+    phrases = re.split(r"([.!?])", message)
+
+    structured_text = []
+    current_phrase = ""
+
+    for segment in phrases:
+        if segment in ".!?":  
+            # 🏷️ Fin d'une phrase -> Déterminer son émotion
+            if current_phrase.strip():  # ⬅️ Vérifie qu'on ne traite pas une phrase vide
+                current_phrase += segment
+                structured_text.append((current_phrase.strip(), assign_emotion(current_phrase)))
+            current_phrase = ""  # Reset de la phrase en cours
+        else:
+            current_phrase += segment
+
+    # ⬇️ Vérifier s'il reste une phrase en dehors des séparateurs (éviter les phrases vides)
+    if current_phrase.strip():
+        structured_text.append((current_phrase.strip(), assign_emotion(current_phrase)))
+
+    # 🔹 Vérification du résultat
+    for phrase, emotion in structured_text:
+        print(f"📝 Phrase : {phrase} → 🎭 Émotion détectée : {emotion}")
+
+    return structured_text
 
 def get_sound(consonne, emotion="neutre"):
     """Cherche un son correspondant à une consonne et une émotion. Fallback vers `consonnes/` si nécessaire."""
@@ -84,15 +114,17 @@ def decompose_message(message):
 
     return consonnes
 
-def assign_emotion(message):
-    """Détecte l'émotion du message."""
-    if "?" in message:
+def assign_emotion(phrase):
+    """Détecte l'émotion d'une phrase."""
+    phrase = phrase.strip()
+
+    if "?" in phrase:
         return "question"
-    elif "!" in message:
+    elif "!" in phrase:
         return "surprise"
-    elif any(word in message.lower() for word in ["oui", "super", "merci"]):
+    elif any(word in phrase.lower() for word in ["oui", "super", "merci"]):
         return "positif"
-    elif any(word in message.lower() for word in ["non", "triste", "pas"]):
+    elif any(word in phrase.lower() for word in ["non", "triste", "pas"]):
         return "negatif"
     else:
         return "neutre"
@@ -163,20 +195,41 @@ def generate_tts_audio(message: str, options: dict[str, Any]) -> tuple[str, byte
     return ("raw", byte_array)
 
 def tts_bd1(message: str):
-    """Génère un son à partir d'un message et le joue immédiatement sans créer de fichier temporaire."""
+    """Génère et joue un son à partir du message, en adaptant l’émotion à chaque phrase."""
 
-    # 📝 **Génération du son**
-    format, audio_data = generate_tts_audio(message, {"audio_output": "wav"})
+    # 🔹 Séparer le message en phrases avec émotions détectées
+    structured_text = process_message_by_phrases(message)
 
-    # 🔍 **Vérification**
-    print(f"🎧 **Format généré** : {format}")
-    print(f"📂 **Taille des données** : {len(audio_data)} octets")
+    final_audio = AudioSegment.silent(duration=0)  # Initialisation de l’audio combiné
 
-    # 🎵 **Lecture en mémoire sans fichier temporaire**
+    for phrase, emotion in structured_text:
+        print(f"📝 **Phrase analysée** : {phrase} → 🎭 **Émotion détectée** : {emotion}")
+
+        # Décomposition et génération de l’audio
+        options = {"audio_output": "wav"}
+        format, audio_data = generate_tts_audio(phrase, options)
+
+        # Charger l’audio généré en mémoire
+        temp_stream = io.BytesIO(audio_data)
+        phrase_audio = AudioSegment.from_file(temp_stream, format="wav")
+
+        final_audio += phrase_audio  # Ajouter à l’audio final
+
+    # 📀 **Sauvegarde temporaire**
+    output_path = os.path.join(BASE_DIR, "temp_tts.wav")
+    with open(output_path, "wb") as f:
+        final_audio.export(f, format="wav")
+
+    print(f"✅ Fichier `{output_path}` généré et prêt à être lu.")
+
+    # ▶️ **Lecture immédiate**
+    wave_obj = sa.WaveObject.from_wave_file(output_path)
+    play_obj = wave_obj.play()
+    play_obj.wait_done()  # Attendre la fin de la lecture
+
+    # 🗑️ **Suppression du fichier après lecture**
     try:
-        wave_obj = sa.WaveObject.from_wave_read(wave.open(io.BytesIO(audio_data), "rb"))
-        play_obj = wave_obj.play()
-        play_obj.wait_done()  # Attendre la fin de la lecture
-        print(f"✅ Lecture du message terminée !")
+        os.remove(output_path)
+        print(f"🗑️ Fichier `{output_path}` supprimé après lecture.")
     except Exception as e:
-        print(f"❌ Erreur lors de la lecture du son : {e}")
+        print(f"❌ Erreur lors de la suppression du fichier `{output_path}` : {e}")
