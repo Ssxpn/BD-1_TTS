@@ -222,14 +222,19 @@ def tts_bd1(message: str):
 
     print(f"✅ Fichier `{output_path}` généré et prêt à être lu.")
 
-    # ▶️ **Lecture immédiate**
-    wave_obj = sa.WaveObject.from_wave_file(output_path)
-    play_obj = wave_obj.play()
-    play_obj.wait_done()  # Attendre la fin de la lecture
+    
+    # 🔄 **Charger l'audio en mémoire avant suppression**
+    with open(output_path, "rb") as f:
+        audio_buffer = io.BytesIO(f.read())  # Charger le contenu en mémoire
 
-    # 🗑️ **Suppression du fichier après lecture**
+    # 🗑️ **Supprimer le fichier immédiatement**
     try:
         os.remove(output_path)
-        print(f"🗑️ Fichier `{output_path}` supprimé après lecture.")
+        print(f"🗑️ Fichier `{output_path}` supprimé après chargement en mémoire.")
     except Exception as e:
         print(f"❌ Erreur lors de la suppression du fichier `{output_path}` : {e}")
+
+    # ▶️ **Lecture depuis la mémoire**
+    wave_obj = sa.WaveObject.from_wave_read(wave.open(audio_buffer, "rb"))
+    play_obj = wave_obj.play()
+    play_obj.wait_done()  # Attendre la fin de la lecture
