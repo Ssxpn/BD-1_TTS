@@ -7,7 +7,8 @@ import simpleaudio as sa
 from pydub import AudioSegment
 from typing import Any
 import unicodedata
-import threading
+import pygame
+import time
 
 
 # 📂 Définition des dossiers
@@ -145,25 +146,25 @@ def enforce_sound_rules(consonnes):
 def generate_tts_audio(message: str, options: dict[str, Any]) -> tuple[str, bytes]:
     """Génère un fichier audio à partir du message en assemblant les sons correspondants."""
 
-    print(f"\n📝 **Message** : {message}")
+    #print(f"\n📝 **Message** : {message}")
 
     consonnes = decompose_message(message)
     print(f"🔡 **Consonnes extraites** : {consonnes}")
 
     emotion = assign_emotion(message)
-    print(f"🎭 **Émotion détectée** : {emotion}")
+    #print(f"🎭 **Émotion détectée** : {emotion}")
 
     consonnes = enforce_sound_rules(consonnes)
-    print(f"✅ **Consonnes après règles** : {consonnes}")
+    #print(f"✅ **Consonnes après règles** : {consonnes}")
 
     # 1️⃣ **Préchargement et assemblage des sons**
     final_audio = AudioSegment.silent(duration=0)
     total_duration = 0
 
-    print("\n🎶 **Correspondance des sons** :")
-    print("┌────────┬──────────────────────────┬───────────┬──────────────────────────────────────────────┐")
-    print("│ Lettre │       Fichier WAV         │ Émotion   │                     Path                    │")
-    print("├────────┼──────────────────────────┼───────────┼──────────────────────────────────────────────┤")
+    #print("\n🎶 **Correspondance des sons** :")
+    #print("┌────────┬──────────────────────────┬───────────┬──────────────────────────────────────────────┐")
+    #print("│ Lettre │       Fichier WAV         │ Émotion   │                     Path                    │")
+    #print("├────────┼──────────────────────────┼───────────┼──────────────────────────────────────────────┤")
 
     for consonne in consonnes:
         sound_file, sound_emotion = get_sound(consonne, emotion)
@@ -172,12 +173,12 @@ def generate_tts_audio(message: str, options: dict[str, Any]) -> tuple[str, byte
             audio = AudioSegment.from_wav(sound_file)
             final_audio += audio  # **On assemble les sons**
             total_duration += len(audio) / 1000  # Convertir en secondes
-            print(f"│   {consonne}   │ {os.path.basename(sound_file):<24} │ {sound_emotion:<9} │ {sound_file} │")
+            #print(f"│   {consonne}   │ {os.path.basename(sound_file):<24} │ {sound_emotion:<9} │ {sound_file} │")
         else:
             print(f"│   {consonne}   │ ❌ AUCUN SON TROUVÉ         │ {sound_emotion:<9} │ ❌ Aucun fichier trouvé │")
 
-    print("└────────┴──────────────────────────┴───────────┴──────────────────────────────────────────────┘\n")
-    print(f"📏 **Durée totale de l'audio généré** : {total_duration:.2f} secondes")
+    #print("└────────┴──────────────────────────┴───────────┴──────────────────────────────────────────────┘\n")
+    #print(f"📏 **Durée totale de l'audio généré** : {total_duration:.2f} secondes")
 
     # 2️⃣ **Sauvegarde en mémoire**
     output_stream = io.BytesIO()
@@ -198,44 +199,36 @@ def generate_tts_audio(message: str, options: dict[str, Any]) -> tuple[str, byte
 def tts_bd1(message: str):
     """Génère et joue un son à partir du message, en adaptant l’émotion à chaque phrase."""
 
-    # 🔹 Séparer le message en phrases avec émotions détectées
     structured_text = process_message_by_phrases(message)
-
-    final_audio = AudioSegment.silent(duration=0)  # Initialisation de l’audio combiné
+    final_audio = AudioSegment.silent(duration=0)
 
     for phrase, emotion in structured_text:
-        print(f"📝 **Phrase analysée** : {phrase} → 🎭 **Émotion détectée** : {emotion}")
+        #print(f"📝 **Phrase analysée** : {phrase} → 🎭 **Émotion détectée** : {emotion}")
 
-        # Décomposition et génération de l’audio
         options = {"audio_output": "wav"}
         format, audio_data = generate_tts_audio(phrase, options)
 
-        # Charger l’audio généré en mémoire
         temp_stream = io.BytesIO(audio_data)
         phrase_audio = AudioSegment.from_file(temp_stream, format="wav")
 
-        final_audio += phrase_audio  # Ajouter à l’audio final
-
-    # 📀 **Sauvegarde temporaire**
+        final_audio += phrase_audio
+        
     output_path = os.path.join(BASE_DIR, "temp_tts.wav")
     with open(output_path, "wb") as f:
         final_audio.export(f, format="wav")
 
-    print(f"✅ Fichier `{output_path}` généré et prêt à être lu.")
-
+    #print(f"✅ Fichier `{output_path}` généré et prêt à être lu.")
+    audio_file = os.path.join(BASE_DIR, "temp_tts.wav")
+    # Initialiser pygame mixer
+    pygame.mixer.init()
     
-    # 🔄 **Charger l'audio en mémoire avant suppression**
-    with open(output_path, "rb") as f:
-        audio_buffer = io.BytesIO(f.read())  # Charger le contenu en mémoire
-
-    # 🗑️ **Supprimer le fichier immédiatement**
-    try:
-        os.remove(output_path)
-        print(f"🗑️ Fichier `{output_path}` supprimé après chargement en mémoire.")
-    except Exception as e:
-        print(f"❌ Erreur lors de la suppression du fichier `{output_path}` : {e}")
-
-    # ▶️ **Lecture depuis la mémoire**
-    wave_obj = sa.WaveObject.from_wave_read(wave.open(audio_buffer, "rb"))
-    play_obj = wave_obj.play()
-    play_obj.wait_done()  # Attendre la fin de la lecture
+    # Charger et jouer le fichier audio
+    pygame.mixer.music.load(audio_file)
+    pygame.mixer.music.play()
+    
+    # Attendre que la lecture soit terminée
+    while pygame.mixer.music.get_busy():
+        time.sleep(0.1)
+    pygame.mixer.quit() 
+    # Supprimer le fichier audio après lecture
+    os.remove(audio_file)
