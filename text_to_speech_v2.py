@@ -96,7 +96,7 @@ def decompose_message(message):
         for c in unicodedata.normalize('NFD', message)
     )
 
-    vowels = "aeiouy"
+    vowels = "aeiou"
     consonnes = []
     exceptions = {"je", "tu", "il", "on", "yo"}  # Mots de 2 lettres à garder
     
