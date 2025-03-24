@@ -1,0 +1,8 @@
+# Environnement virtuel
+venv/
+
+# Fichier temporaire de synthèse vocale
+temp_tts.wav
+
+# Cache Python
+__pycache__/
