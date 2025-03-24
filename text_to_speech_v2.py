@@ -104,6 +104,7 @@ def decompose_message(message):
     words = message.split()
     
     for word in words:
+        word = word.lower()
         if len(word) <= 2 and word not in exceptions:
             continue  # Ignore les mots de 2 lettres sauf exceptions
         
