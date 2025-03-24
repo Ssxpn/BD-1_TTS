@@ -98,7 +98,7 @@ def decompose_message(message):
 
     vowels = "aeiouy"
     consonnes = []
-    exceptions = {"je", "tu", "il", "on"}  # Mots de 2 lettres à garder
+    exceptions = {"je", "tu", "il", "on", "yo"}  # Mots de 2 lettres à garder
     
     # Séparer en mots pour exclure ceux de 2 lettres sauf exceptions
     words = message.split()
