@@ -180,7 +180,7 @@ def get_sound_chunked(message, emotion="neutre", max_chunk=4):
     i = 0
     results = []
     used_variants = set()
-    emotion_or=emotion
+    emotion_or = emotion
 
     print(f"\n🔤 Lettres conservées : {list(message)}")
     print(f"🧩 Mappage BSP : {mapped}\n")
@@ -190,9 +190,17 @@ def get_sound_chunked(message, emotion="neutre", max_chunk=4):
             i += 1
             continue
 
-        for chunk_len in range(min(max_chunk, len(mapped) - i), 0, -1):
-            chunk = mapped[i:i+chunk_len]
+        # Trouver la fin du mot courant (jusqu'au prochain espace)
+        word_end = i
+        while word_end < len(mapped) and mapped[word_end] != " ":
+            word_end += 1
 
+        chunk_found = False
+
+        for chunk_len in range(min(max_chunk, word_end - i), 0, -1):
+            chunk = mapped[i:i + chunk_len]
+
+            # 🔹 Fallback dès le début si chunk_len == 1
             if chunk_len == 1:
                 original_char = message[i].lower()
                 print(f"🔸 Aucun chunk valide, fallback avec get_sound() sur '{original_char}'")
@@ -210,7 +218,9 @@ def get_sound_chunked(message, emotion="neutre", max_chunk=4):
                     results.append((path, used_emotion, 1, original_char))
                 else:
                     print(f"❌ Aucun son trouvé pour caractère : '{original_char}'")
-                i += 1
+
+                i = word_end  # 🔁 Même en fallback, passer au mot suivant
+                chunk_found = True
                 break
 
             if not all(c in ["B", "S", "P"] for c in chunk):
@@ -221,7 +231,7 @@ def get_sound_chunked(message, emotion="neutre", max_chunk=4):
             expected_filename = prefix + ".wav"
 
             folder_path = os.path.join(
-                SOUNDS_DIR, "compositions", f"{chunk_len} caractères", pattern, emotion
+                SOUNDS_DIR, "compositions", f"{chunk_len}_caracteres", pattern, emotion
             )
 
             print(f"\n🔍 Chunk : {''.join(chunk)} → Dossier : {folder_path}")
@@ -232,7 +242,7 @@ def get_sound_chunked(message, emotion="neutre", max_chunk=4):
             if not path and emotion != "neutre":
                 print(f"⚠️ Rien trouvé pour {emotion}, on tente 'neutre'.")
                 folder_path = os.path.join(
-                    SOUNDS_DIR, "compositions", f"{chunk_len} caractères", pattern, "neutre"
+                    SOUNDS_DIR, "compositions", f"{chunk_len}_caracteres", pattern, "neutre"
                 )
                 print(f"📁 Dossier fallback : {folder_path}")
                 print(f"🔎 Fichier attendu : {expected_filename}")
@@ -243,12 +253,14 @@ def get_sound_chunked(message, emotion="neutre", max_chunk=4):
             if path:
                 print(f"✅ Fichier trouvé : {path}")
                 used_variants.add(os.path.basename(path))
-                results.append((path, emotion, chunk_len, message[i:i+chunk_len]))
-                i += chunk_len
+                results.append((path, emotion, chunk_len, message[i:i + chunk_len]))
+                i = word_end  # 🔁 Une fois le chunk utilisé, on saute le mot entier
+                chunk_found = True
                 break
-        else:
+
+        if not chunk_found:
             print(f"❌ Aucun son trouvé pour : {mapped[i]}")
-            i += 1
+            i = word_end  # 🔁 Sauter au mot suivant même si rien trouvé
 
     return results
 
