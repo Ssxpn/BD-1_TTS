@@ -19,8 +19,8 @@ EMOTIONS_DIR = os.path.join(SOUNDS_DIR, "emotions")
 
 # 📌 **Catégorisation des sons**
 SOUND_TYPES = {
-    "sifflement": ["s", "z", "f", "v", "j"],
-    "double_sifflement": ["x", "h"],
+    "sifflement": ["f", "v", "j"],
+    "double_sifflement": ["x", "h", "s", "z"],
     "double_beep": ["b", "p", "d", "t", "k", "g", "q"],
     "piano": ["l", "m", "n", "r"],
     "divers": ["w", "y", "c"]
