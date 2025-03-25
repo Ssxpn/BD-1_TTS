@@ -2,6 +2,7 @@ import os
 import io
 import wave
 import random
+import string
 import re
 import simpleaudio as sa
 from pydub import AudioSegment
@@ -26,53 +27,89 @@ SOUND_TYPES = {
 
 # 🧠 Regroupement BSP
 BSP_GROUPS = {
-    "B": {"b", "p", "d", "t", "k", "g", "q"},
+    "B": {"b", "p", "d", "t", "k", "g", "q", "c"},
     "S": {"s", "z", "f", "v", "j", "x", "h"},
     "P": {"l", "m", "n", "r"}
 }
 
-# def decompose_message(message):
-#     """Ne garde que les consonnes suivies d'une voyelle et insère un espace entre chaque mot traité. Supprime les accents."""
-#     message = message.lower()
-#     message = ''.join(
-#         c for c in unicodedata.normalize('NFD', message)
-#         if unicodedata.category(c) != 'Mn'
-#     )
-#     vowels = "aeiouy"
-#     consonnes = []
-#     exceptions = {"je", "tu", "il", "on", "yo"}
-#     words = message.split()
+def process_message_by_phrases(message):
+    """Découpe un message en phrases, nettoie les apostrophes/tirets, et attribue une émotion à chaque phrase."""
+    # 🔄 Nettoyage initial
+    cleaned_message = message.replace("'", " ").replace("-", " ")
 
-#     for word in words:
-#         if len(word) <= 2 and word not in exceptions:
-#             continue
-#         for i in range(len(word) - 1):
-#             char = word[i]
-#             next_char = word[i + 1]
-#             if char.isalpha() and char not in vowels and next_char in vowels:
-#                 consonnes.append(char)
-#         consonnes.append(' ')
+    # 🔹 Séparer les phrases tout en gardant les ponctuations
+    phrases = re.split(r"([.!?])", cleaned_message)
 
-#     return consonnes
+    structured_text = []
+    current_phrase = ""
+
+    for segment in phrases:
+        if segment in ".!?":
+            if current_phrase.strip():
+                full_phrase = (current_phrase + segment).strip()
+                structured_text.append((full_phrase, assign_emotion(full_phrase)))
+            current_phrase = ""
+        else:
+            current_phrase += segment
+
+    # Dernière phrase (sans ponctuation éventuelle)
+    if current_phrase.strip():
+        structured_text.append((current_phrase.strip(), assign_emotion(current_phrase)))
+
+    # Debug
+    for phrase, emotion in structured_text:
+        print(f"📝 Phrase : {phrase} → 🎭 Émotion détectée : {emotion}")
+
+    return structured_text
 
 def decompose_message(message):
-    """
-    Ne garde que les consonnes et les espaces d'un message,
-    et retourne le tout sous forme de liste.
 
-    Ex: "Salut BD-1" → ['s', 'l', 't', ' ', 'b', 'd']
-    """
+    # 🔹 Minuscule + suppression des accents
     message = message.lower()
+    message = message.replace("'", " ")
+    message = ''.join(
+        c for c in unicodedata.normalize('NFD', message)
+        if unicodedata.category(c) != 'Mn'
+    )
 
-    vowels = "aeiouy"
+    vowels = "aeiou"
     consonnes = []
 
-    for char in message:
-        if char == ' ':
-            consonnes.append(' ')
-        elif char.isalpha() and char not in vowels:
-            consonnes.append(char)
+    exceptions = {} # {"je", "tu", "il", "on", "yo"}
+    force_include = {} # {"bd-1"}
 
+    words = message.split()
+
+    for word in words:
+        cleaned = word.strip(string.punctuation)
+
+        if cleaned in force_include:
+            for c in cleaned:
+                if c.isalpha() and c not in vowels:
+                    consonnes.append(c)
+            consonnes.append(' ')
+            continue
+
+        if len(cleaned) <= 4 and cleaned not in exceptions:
+            continue
+
+        i = 0
+        while i < len(cleaned) - 1:
+            c1 = cleaned[i]
+            c2 = cleaned[i + 1]
+
+            if c2 in vowels and c1.isalpha() and c1 not in vowels:
+                j = i - 1
+                stack = [c1]
+                while j >= 0 and cleaned[j].isalpha() and cleaned[j] not in vowels:
+                    stack.insert(0, cleaned[j])
+                    j -= 1
+                consonnes.extend(stack)
+                i += 2
+            else:
+                i += 1
+
+        consonnes.append(' ')
     return consonnes
 
 def assign_emotion(phrase):
@@ -80,41 +117,45 @@ def assign_emotion(phrase):
     phrase = phrase.strip()
     if "?" in phrase:
         return "question"
-    elif "!" in phrase:
-        return "surprise"
-    elif any(word in phrase.lower() for word in ["oui", "super", "merci"]):
-        return "positif"
     elif any(word in phrase.lower() for word in ["non", "triste", "pas"]):
         return "negatif"
+    elif any(word in phrase.lower() for word in ["oui", "super", "merci"]):
+        return "positif"
+    elif "!" in phrase:
+        return "surprise"
     else:
         return "neutre"
 
-
-def get_random_variant(folder, consonne):
+def get_random_variant(folder, consonne, used_variants):
     if not os.path.exists(folder):
         print(f"⛔ Dossier introuvable : {folder}")
         return None
 
     variants = [
         f for f in os.listdir(folder)
-        if f.lower().startswith(consonne.lower()) and f.endswith(".wav")
+        if f.lower().startswith(consonne.lower()) and f.endswith(".wav") and f not in used_variants
     ]
 
     print(f"🔍 Fichiers présents dans {folder} : {variants}")
 
-    if variants:
-        return os.path.join(folder, random.choice(variants))
+    if variants: #Ne pas répéter le meme son 2 fois
+        chosen = random.choice(variants)
+        used_variants.add(chosen)
+        return os.path.join(folder, chosen)
     return None
 
-def get_sound(consonne, emotion="neutre"):
+def get_sound(consonne, emotion="neutre", used_variants=None):
     if consonne == ' ':
         return None, None
 
+    if used_variants is None:
+        used_variants = set()
+
     emotion_folder = os.path.join(EMOTIONS_DIR, emotion)
-    sound_path = get_random_variant(emotion_folder, consonne)
+    sound_path = get_random_variant(emotion_folder, consonne, used_variants)
 
     if not sound_path:
-        sound_path = get_random_variant(CONSONNES_DIR, consonne)
+        sound_path = get_random_variant(CONSONNES_DIR, consonne, used_variants)
         emotion = "neutre"
 
     if not sound_path:
@@ -138,6 +179,8 @@ def get_sound_chunked(message, emotion="neutre", max_chunk=4):
     mapped = map_letters_to_sound_groups(message)
     i = 0
     results = []
+    used_variants = set()
+    emotion_or=emotion
 
     print(f"\n🔤 Lettres conservées : {list(message)}")
     print(f"🧩 Mappage BSP : {mapped}\n")
@@ -152,17 +195,23 @@ def get_sound_chunked(message, emotion="neutre", max_chunk=4):
 
             if chunk_len == 1:
                 original_char = message[i].lower()
-                print(f"🔸 Chunk trop court ({chunk}), on utilise get_sound() avec '{original_char}'")
-                path, emo_used = get_sound(original_char, emotion)
+                print(f"🔸 Aucun chunk valide, fallback avec get_sound() sur '{original_char}'")
+                emotion_folder = os.path.join(EMOTIONS_DIR, emotion_or)
+                path = get_random_variant(emotion_folder, original_char, used_variants)
+                used_emotion = emotion_or
+
+                if not path:
+                    path = get_random_variant(CONSONNES_DIR, original_char, used_variants)
+                    used_emotion = "neutre"
+
                 if path:
                     print(f"✅ Fichier trouvé (1 lettre) : {path}")
-                    results.append((path, emo_used, 1, original_char))
-                    i += 1
-                    break
+                    used_variants.add(os.path.basename(path))
+                    results.append((path, used_emotion, 1, original_char))
                 else:
                     print(f"❌ Aucun son trouvé pour caractère : '{original_char}'")
-                    i += 1
-                    break
+                i += 1
+                break
 
             if not all(c in ["B", "S", "P"] for c in chunk):
                 continue
@@ -178,7 +227,7 @@ def get_sound_chunked(message, emotion="neutre", max_chunk=4):
             print(f"\n🔍 Chunk : {''.join(chunk)} → Dossier : {folder_path}")
             print(f"🔎 Fichier attendu : {expected_filename}")
 
-            path = get_random_variant(folder_path, prefix)
+            path = get_random_variant(folder_path, prefix, used_variants)
 
             if not path and emotion != "neutre":
                 print(f"⚠️ Rien trouvé pour {emotion}, on tente 'neutre'.")
@@ -187,12 +236,13 @@ def get_sound_chunked(message, emotion="neutre", max_chunk=4):
                 )
                 print(f"📁 Dossier fallback : {folder_path}")
                 print(f"🔎 Fichier attendu : {expected_filename}")
-                path = get_random_variant(folder_path, prefix)
+                path = get_random_variant(folder_path, prefix, used_variants)
                 if path:
                     emotion = "neutre"
 
             if path:
                 print(f"✅ Fichier trouvé : {path}")
+                used_variants.add(os.path.basename(path))
                 results.append((path, emotion, chunk_len, message[i:i+chunk_len]))
                 i += chunk_len
                 break
@@ -255,16 +305,20 @@ def generate_tts_audio(message: str, options: dict[str, Any]) -> tuple[str, byte
 def tts_bd1(message: str):
     """Génère et joue un son à partir du message, en adaptant l’émotion à chaque phrase."""
 
+    structured_text = process_message_by_phrases(message)
     final_audio = AudioSegment.silent(duration=0)
 
-    # 🔹 On peut ajouter plus tard une séparation en phrases
-    options = {"audio_output": "wav"}
-    format, audio_data = generate_tts_audio(message, options)
+    for phrase, emotion in structured_text:
+        #print(f"📝 **Phrase analysée** : {phrase} → 🎭 **Émotion détectée** : {emotion}")
 
-    temp_stream = io.BytesIO(audio_data)
-    audio_segment = AudioSegment.from_file(temp_stream, format="wav")
-    final_audio += audio_segment
+        options = {"audio_output": "wav"}
+        format, audio_data = generate_tts_audio(phrase, options)
 
+        temp_stream = io.BytesIO(audio_data)
+        phrase_audio = AudioSegment.from_file(temp_stream, format="wav")
+
+        final_audio += phrase_audio
+        
     output_path = os.path.join(BASE_DIR, "temp_tts.wav")
     with open(output_path, "wb") as f:
         final_audio.export(f, format="wav")

@@ -1,60 +1,43 @@
 # BD-1 Voice Assistant Project
 
-Welcome to the **BD-1 Voice Assistant Project**!  
-This repository aims to create a voice assistant using BD-1’s sound library.
+Welcome to the **BD-1 Voice Assistant Project**! 🎧🤖
+
+This repository aims to build a custom **Text-to-Speech (TTS) system** that mimics the vocal style of **BD-1**, the adorable droid from *Star Wars Jedi: Fallen Order*. The TTS reacts to user input using pre-recorded BD-1 sounds that are matched to emotion and sentence structure.
 
 ![BD-1 Sound Project](https://th.bing.com/th/id/OIP.Shcaq2sc_Ovxg0BefIrLsAHaLO?rs=1&pid=ImgDetMain)
 
-
-**Work in Progress:** The database is complete, working on the assistant. TTS is working.
-
----
-
-## Project Goal
-
-The objective of this project is to **build an AI-driven assistant** that responds using BD-1’s iconic sounds in an emotionally coherent way.  
-
-For example:  
-- When the user says *"No"*, BD-1 should sound disappointed.  
-- When the user says *"Hello"*, BD-1 should sound happy.
-
-I'll be using and ESP32S3 for this project.
-
-The challenge? **I have no idea how to achieve this yet.**   
-
-However, the BD-1 soundbank contains:  
-- **Complete phrases** that could be used directly.  
-- **Shorter sounds** that might be combined to form meaningful responses.  
+> **Work in Progress:** The TTS core is functional. Emotion detection and assistant logic are under improvement.
 
 ---
 
-## How You Can Contribute
+## 🎯 Project Goal
 
-I welcome any help, as I’m new to this field!   
-Here are some key tasks where you can assist:
-
-### **1. Clean & Organize the Sound Database**
-- **Remove duplicate sounds** (some clips seem to be repeated).  
-- **Rename files** to reflect their emotional intent while keeping the original numbering:  
-  Example: `xxxxxx-AngryBeeps.wav`, `xxxxxx-HappyChirp.wav`  
-- **Sort files** into directories by emotion (Happy, Sad, Angry, etc.).
-- **Important** All modification must be done inside sounds/uncompressed. Then we can run "conversion_all.py" to regenerate the uncompressed folder
+To build a **TTS system in BD-1's style**, capable of:
+- Responding to user prompts using a combination of **BD-1 sounds**.
+- Matching **emotion** (e.g. happy, sad, surprised) to the content of the phrase.
+- **Mimicking language structure** while remaining robotic and cute.
 
 
-### **2. Build the Response System**
-- Scripts ttsbd1.py and ttsbd1sanswait.py are 2 translator (2nd is tried without wait but not found of it). They work as a TTS with a dictionnary. By studying some keyword in the answer, the program reads a sounds from one of the folder.
-
-### **3. To be done**
-- Assemble longer answer. Find a way to assemble sounds to create a longer answer when the sentence is longer.
-- Ad conversationnal IA (answer from IA will be run throught the TTS)
 ---
 
-## Tech & Tools
+## 🛠️ Current To-Do List
 
-### 🔹 Proposed Approach:
-I plan to use **STT** -> **Local LLM** (llama maybe, looking for a model we can craft and twist to give some personnality) -> **Dictionnary TTS** Identification of some keywords and lenght of the sentence to fetch and produce believable reaction from BD-1.
+Here's what's left:
 
-**If you have other ideas, feel free to share them!**
+- Improve **emotion detection** from text input. (see `assign_emotion()` function)
+- Test different styles and expressions with **more BD-1 phrases**.
+
+---
+
+## 🧩 Project Architecture
+
+### 🔉 Sound System (Folder: `/sounds`)
+Find more info in the Readme.md in the sounds folder.
+
+### 🧪 Dev vs. Prod Environments
+
+- **`text_to_speech_v0.py`** → Dev version (lots of `print()` for debugging and understanding chunk logic).
+- **`text_to_speech_vX.py` (latest)** → Production-ready version, callable from other scripts without flooding logs.
 
 ---
 
@@ -62,17 +45,6 @@ I plan to use **STT** -> **Local LLM** (llama maybe, looking for a model we can 
 
 This project is **community-driven** and intended for **non-commercial and fan-based use only**.  
 Please verify individual file licenses before using them.
-
----
-
-## Get Involved!
-
-If you're interested in contributing:
-1. **Fork this repository**  
-2. **Work on any of the tasks above**  
-3. **Submit a pull request** with your improvements  
-
-Let’s bring BD-1 to life together! 🤖🎶  
 
 ---
 
@@ -85,3 +57,12 @@ Special thanks to:
 ---
 
 **Thank you for your help! May the Force be with you.** 
+
+## Join the Mission
+
+To contribute:
+1. **Fork this repo**
+2. Tweak or add functionality
+3. Submit a **pull request**
+
+Let’s bring BD-1 to life – together! 💬🔊✨
