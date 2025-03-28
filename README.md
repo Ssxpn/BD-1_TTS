@@ -86,7 +86,7 @@ BD-1-Conversationnal-AI/
   - Removes vowels and accents
   - Only keeps consonants followed by vowels
   - Groups leading consonants (e.g. dr, gn, mp)
-  - Discards words of length ≤ 4 unless exception => Works good in french, i would lower that to 3 if used in english
+  - Discards words of length ≤ 4 unless exception. If no word over 4 letters, accepts 4 letters words.
   - Returns a cleaned list of consonants.
 
 ### map_letters_to_sound_groups(text: list[str])
