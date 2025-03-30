@@ -63,6 +63,45 @@ def process_message_by_phrases(message):
     return structured_text
 
 def decompose_message(message):
+    def _extract_consonnes(message, min_word_len):
+        vowels = "aeiou"
+        consonnes = []
+        exceptions = {}  # {"je", "tu", "il", "on", "yo"}
+        force_include = {}  # {"bd-1"}
+
+        words = message.split()
+
+        for word in words:
+            cleaned = word.strip(string.punctuation)
+
+            if cleaned in force_include:
+                for c in cleaned:
+                    if c.isalpha() and c not in vowels:
+                        consonnes.append(c)
+                consonnes.append(' ')
+                continue
+
+            if len(cleaned) <= min_word_len and cleaned not in exceptions:
+                continue
+
+            i = 0
+            while i < len(cleaned) - 1:
+                c1 = cleaned[i]
+                c2 = cleaned[i + 1]
+
+                if c2 in vowels and c1.isalpha() and c1 not in vowels:
+                    j = i - 1
+                    stack = [c1]
+                    while j >= 0 and cleaned[j].isalpha() and cleaned[j] not in vowels:
+                        stack.insert(0, cleaned[j])
+                        j -= 1
+                    consonnes.extend(stack)
+                    i += 2
+                else:
+                    i += 1
+
+            consonnes.append(' ')
+        return consonnes
 
     # 🔹 Minuscule + suppression des accents
     message = message.lower()
@@ -72,44 +111,13 @@ def decompose_message(message):
         if unicodedata.category(c) != 'Mn'
     )
 
-    vowels = "aeiou"
-    consonnes = []
+    # 🔹 Première passe (mots de +4 lettres)
+    consonnes = _extract_consonnes(message, min_word_len=4)
 
-    exceptions = {} # {"je", "tu", "il", "on", "yo"}
-    force_include = {} # {"bd-1"}
+    # 🔹 Seconde passe si vide (mots de +2 lettres)
+    if not [c for c in consonnes if c.strip()]:
+        consonnes = _extract_consonnes(message, min_word_len=3)
 
-    words = message.split()
-
-    for word in words:
-        cleaned = word.strip(string.punctuation)
-
-        if cleaned in force_include:
-            for c in cleaned:
-                if c.isalpha() and c not in vowels:
-                    consonnes.append(c)
-            consonnes.append(' ')
-            continue
-
-        if len(cleaned) <= 4 and cleaned not in exceptions:
-            continue
-
-        i = 0
-        while i < len(cleaned) - 1:
-            c1 = cleaned[i]
-            c2 = cleaned[i + 1]
-
-            if c2 in vowels and c1.isalpha() and c1 not in vowels:
-                j = i - 1
-                stack = [c1]
-                while j >= 0 and cleaned[j].isalpha() and cleaned[j] not in vowels:
-                    stack.insert(0, cleaned[j])
-                    j -= 1
-                consonnes.extend(stack)
-                i += 2
-            else:
-                i += 1
-
-        consonnes.append(' ')
     return consonnes
 
 def assign_emotion(phrase):
