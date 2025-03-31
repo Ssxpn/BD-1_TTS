@@ -57,8 +57,8 @@ def process_message_by_phrases(message):
         structured_text.append((current_phrase.strip(), assign_emotion(current_phrase)))
 
     # Debug
-    for phrase, emotion in structured_text:
-        print(f"📝 Phrase : {phrase} → 🎭 Émotion détectée : {emotion}")
+    #for phrase, emotion in structured_text:
+        #print(f"📝 Phrase : {phrase} → 🎭 Émotion détectée : {emotion}")
 
     return structured_text
 
@@ -111,12 +111,16 @@ def decompose_message(message):
         if unicodedata.category(c) != 'Mn'
     )
 
-    # 🔹 Première passe (mots de +4 lettres)
-    consonnes = _extract_consonnes(message, min_word_len=4)
+    # 🔹 Première passe (mots de +5 lettres)
+    consonnes = _extract_consonnes(message, min_word_len=5)
 
-    # 🔹 Seconde passe si vide (mots de +2 lettres)
+    # 🔹 Seconde passe si vide (mots de +4 lettres)
     if not [c for c in consonnes if c.strip()]:
-        consonnes = _extract_consonnes(message, min_word_len=3)
+        consonnes = _extract_consonnes(message, min_word_len=4)
+
+        # 🔹 Seconde passe si vide (mots de +3 lettres)
+        if not [c for c in consonnes if c.strip()]:
+            consonnes = _extract_consonnes(message, min_word_len=3)
 
     return consonnes
 
@@ -258,16 +262,16 @@ def generate_tts_audio(message: str, options: dict[str, Any]) -> tuple[str, byte
 
     emotion = assign_emotion(message)
     consonnes = decompose_message(message)
-    print(f"🔡 **Consonnes extraites** : {consonnes}")
+    #print(f"🔡 **Consonnes extraites** : {consonnes}")
 
     chunks = get_sound_chunked(consonnes, emotion)
 
     final_audio = AudioSegment.silent(duration=0)
     total_duration = 0
 
-    print("┌────────┬──────────────────────────┬───────────┬──────────────────────────────────────────────┐")
-    print("│ Lettre │       Fichier WAV         │ Émotion   │                     Path                    │")
-    print("├────────┼──────────────────────────┼───────────┼──────────────────────────────────────────────┤")
+    #print("┌────────┬──────────────────────────┬───────────┬──────────────────────────────────────────────┐")
+    #print("│ Lettre │       Fichier WAV         │ Émotion   │                     Path                    │")
+    #print("├────────┼──────────────────────────┼───────────┼──────────────────────────────────────────────┤")
 
     message_letters = list(message)
     msg_index = 0
@@ -277,11 +281,11 @@ def generate_tts_audio(message: str, options: dict[str, Any]) -> tuple[str, byte
             audio = AudioSegment.from_wav(path)
             final_audio += audio
             total_duration += len(audio) / 1000
-            print(f"│   {''.join(original):<10}   │ {os.path.basename(path):<24} │ {emo_used:<9} │ {path} │")
-        else:
-            print(f"│   {''.join(original):<10}   │ ❌ AUCUN SON TROUVÉ         │ {emo_used:<9} │ ❌ Aucun fichier trouvé │")
+            #print(f"│   {''.join(original):<10}   │ {os.path.basename(path):<24} │ {emo_used:<9} │ {path} │")
+        #else:
+            #print(f"│   {''.join(original):<10}   │ ❌ AUCUN SON TROUVÉ         │ {emo_used:<9} │ ❌ Aucun fichier trouvé │")
 
-    print("└────────┴──────────────────────────┴───────────┴──────────────────────────────────────────────┘\n")
+    #print("└────────┴──────────────────────────┴───────────┴──────────────────────────────────────────────┘\n")
 
     # Sauvegarde en mémoire
     output_stream = io.BytesIO()
@@ -323,9 +327,10 @@ def tts_bd1(message: str):
 
     try:
         os.remove(output_path)
-        print(f"🗑️ Fichier `{output_path}` supprimé après chargement en mémoire.")
+        #print(f"🗑️ Fichier `{output_path}` supprimé après chargement en mémoire.")
     except Exception as e:
-        print(f"❌ Erreur lors de la suppression du fichier `{output_path}` : {e}")
+        print(e)
+        #print(f"❌ Erreur lors de la suppression du fichier `{output_path}` : {e}")
 
     wave_obj = sa.WaveObject.from_wave_read(wave.open(audio_buffer, "rb"))
     play_obj = wave_obj.play()

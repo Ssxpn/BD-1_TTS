@@ -111,12 +111,18 @@ def decompose_message(message):
         if unicodedata.category(c) != 'Mn'
     )
 
-    # 🔹 Première passe (mots de +4 lettres)
-    consonnes = _extract_consonnes(message, min_word_len=4)
+    # 🔹 Première passe (mots de +5 lettres)
+    consonnes = _extract_consonnes(message, min_word_len=5)
 
-    # 🔹 Seconde passe si vide (mots de +2 lettres)
+    # 🔹 Seconde passe si vide (mots de +4 lettres)
     if not [c for c in consonnes if c.strip()]:
-        consonnes = _extract_consonnes(message, min_word_len=3)
+        print('debug : pas mot de +5')
+        consonnes = _extract_consonnes(message, min_word_len=4)
+
+        # 🔹 Seconde passe si vide (mots de +3 lettres)
+        if not [c for c in consonnes if c.strip()]:
+            print('debug : pas mot de +4')
+            consonnes = _extract_consonnes(message, min_word_len=3)
 
     return consonnes
 
